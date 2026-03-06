@@ -47,7 +47,7 @@ local function get_repo_info()
     return data.owner.login, data.name
 end
 
-local function run_query(owner, name, pr_number, cursor)
+local function run_query(owner, name, pr_number, cursor, callback)
     local args = {
         'gh', 'api', 'graphql',
         '-F', 'owner=' .. owner,
@@ -59,7 +59,7 @@ local function run_query(owner, name, pr_number, cursor)
         table.insert(args, '-F')
         table.insert(args, 'cursor=' .. cursor)
     end
-    return vim.system(args, { text = true })
+    return vim.system(args, { text = true }, callback)
 end
 
 local function parse_threads(data)
@@ -111,7 +111,7 @@ function M.fetch_threads(pr_number, callback)
     local all_threads = {}
 
     local function paginate(cursor)
-        run_query(owner, name, pr_number, cursor):after(vim.schedule_wrap(function(result)
+        run_query(owner, name, pr_number, cursor, vim.schedule_wrap(function(result)
             if result.code ~= 0 then
                 vim.notify('pr-hopper: GraphQL query failed: ' .. (result.stderr or ''), vim.log.levels.ERROR)
                 return
